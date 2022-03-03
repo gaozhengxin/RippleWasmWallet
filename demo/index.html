@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="wasm_exec.js"></script>
+    <script>
+      if (!WebAssembly.instantiateStreaming) { // polyfill
+        WebAssembly.instantiateStreaming = async (resp, importObject) => {
+          const source = await (await resp).arrayBuffer();
+          return await WebAssembly.instantiate(source, importObject);
+        };
+      }
+
+      const go = new Go();
+      let mod, inst;
+      WebAssembly.instantiateStreaming(fetch("wasm/xrpwallet.wasm"), go.importObject).then(async (result) => {
+        mod = result.module;
+        inst = result.instance;
+        await go.run(inst)
+      });
+
+      let address
+      let status
+      function htmlImportAccount() {
+          let seed = document.getElementById('arg1').value;
+          let  keyseq = parseInt(document.getElementById('arg2').value);
+
+          importAccountFromSeed(seed, keyseq, (err, data) => {
+            if (err) {
+              console.error(err);
+              document.getElementById("accountStatus").innerHTML = "Error";
+              return;
+            }
+            console.log(data)
+            document.getElementById("address").innerHTML = data.address;
+            document.getElementById("accountStatus").innerHTML = "Ok";
+          })
+      }
+    </script>
+  </head>
+  <body>
+    <p>seed: ssh4X9MEjHsMdbwaMqRv2ZbQSfHs5</p>
+    <p>key sequence: 0</p>
+    <p>address: rwybySLAzoJcqB44HQrwyk42z7jzu3GfSS</p>
+    <p>seed: <input type="password" id="arg1"/></p>
+    <p>key sequence: <input type="number" id="arg2"/></p>
+
+    <button type="button" onClick="htmlImportAccount();">import</button>
+    <p>
+        <span id="address"/>
+    </p>
+    <p>
+        <span id="accountStatus" />
+    </p>
+  </body>
+</html>
